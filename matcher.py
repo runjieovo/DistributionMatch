@@ -126,14 +126,13 @@ def cal_GMM_entropy(intervals):
     cel = -np.sum(log_pdf)
     return cel, gmm
 
-def cal_cdf(interval, name, params, intervalName):
+def cal_cdf(interval, name, params, intervalName, k=100):
     if name == 'GMM':
         def calculate(pos, params):
             return sum([w * norm.cdf(pos, mean, np.sqrt(cov)) for w, mean, cov in zip(params.weights_, params.means_.flatten(), params.covariances_.flatten())])
         # cdf = sum([w * norm.cdf(x_point, mean, np.sqrt(cov)) for w, mean, cov in zip(params.weights_, params.means_.flatten(), params.covariances_.flatten())])
         _min = interval.min()
         _max = interval.max()
-        k = 100
         length = (_max - _min) // k
         interval_cdf = []
         lef = _min
@@ -148,7 +147,6 @@ def cal_cdf(interval, name, params, intervalName):
         distribution = distributions[name]
         _min = interval.min()
         _max = interval.max()
-        k = 100
         length = (_max - _min) // k
         interval_cdf = []
         lef = _min
@@ -190,7 +188,7 @@ def simulateFile(file):
     print(f"The best fitting distribution of {file} is {best_fit} with a cross entropy of {entropies[best_fit]:.2f}")
     with open('./matchResult.txt', 'a') as F:
         F.write(f"The best fitting distribution of {file} is {best_fit} with a cross entropy of {entropies[best_fit]:.2f}\n")
-    cal_cdf(intervals, best_fit, fitted_distributions[best_fit], file)
+    cal_cdf(intervals, best_fit, fitted_distributions[best_fit], file, k=100)
 
     plot_best_fit_distribution(intervals, best_fit, fitted_distributions[best_fit], file)
     
