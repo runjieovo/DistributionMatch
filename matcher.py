@@ -187,9 +187,13 @@ def simulateFile(file):
     best_fit = min(entropies, key=entropies.get)
     print(f"The best fitting distribution of {file} is {best_fit} with a cross entropy of {entropies[best_fit]:.2f}")
     with open('./matchResult.txt', 'a') as F:
+        if best_fit == 'GMM':
+            tt = fitted_distributions[best_fit]
+            F.write("GMM: [({}, {}), ({}, {}), ({}, {})]\n".format(tt.covariances_[0,0,0], tt.means_[0,0], tt.covariances_[1,0,0], tt.means_[1,0], tt.covariances_[2,0,0], tt.means_[2,0]))
+        else:
+            F.write('{}: {}\n'.format(best_fit, fitted_distributions[best_fit]))
         F.write(f"The best fitting distribution of {file} is {best_fit} with a cross entropy of {entropies[best_fit]:.2f}\n")
     cal_cdf(intervals, best_fit, fitted_distributions[best_fit], file, k=100)
-
     plot_best_fit_distribution(intervals, best_fit, fitted_distributions[best_fit], file)
     
 if __name__ == '__main__':
