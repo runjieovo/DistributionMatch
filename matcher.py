@@ -163,6 +163,7 @@ def cal_cdf(interval, name, params, intervalName, k=100):
         file.write(intervalName + '\n')
         for interval in interval_cdf:
             file.write("{}:{} {}\n".format(interval[0], interval[1], interval[2]))
+        file.write("#\n")
         
     
 def simulateFile(file):

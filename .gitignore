@@ -1,3 +1,5 @@
 output/
 img/
 *.txt
+*.tar.gz
+*.gz
