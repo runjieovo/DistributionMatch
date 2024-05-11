@@ -123,6 +123,7 @@ def cal_GMM_entropy(intervals):
     gmm = GaussianMixture(n_components=3, random_state=0)
     gmm.fit(intervals)
     log_pdf = gmm.score_samples(intervals)
+    # log_pdf = np.
     cel = -np.sum(log_pdf)
     return cel, gmm
 
@@ -133,7 +134,7 @@ def cal_cdf(interval, name, params, intervalName, k=100):
         # cdf = sum([w * norm.cdf(x_point, mean, np.sqrt(cov)) for w, mean, cov in zip(params.weights_, params.means_.flatten(), params.covariances_.flatten())])
         _min = interval.min()
         _max = interval.max()
-        length = (_max - _min) // k
+        length = (_max - _min + k - 1) // k
         interval_cdf = []
         lef = _min
         pre_cdf = 0
@@ -145,20 +146,43 @@ def cal_cdf(interval, name, params, intervalName, k=100):
         interval_cdf.append((lef, _max, calculate(_max, params) - pre_cdf))
     else:
         distribution = distributions[name]
-        _min = interval.min()
-        _max = interval.max()
-        length = (_max - _min) // k
-        interval_cdf = []
-        lef = _min
-        pre_cdf = 0
-        def calculate(pos, dis, params):
-            return dis.cdf(pos, *params)
-        for i in range(k - 1):
-            cur_cdf = calculate(lef + length, distribution, params)
-            interval_cdf.append((lef, lef + length, cur_cdf - pre_cdf))
-            pre_cdf = cur_cdf
-            lef += length
-        interval_cdf.append((lef, _max, calculate(_max, distribution, params) - pre_cdf))
+        if intervalName == 'pktInterArrivalTime':
+            _min = 0
+            burst = 1e4
+            _max = interval.max()
+            small_part = np.arange(_min, burst, 1, dtype=int)
+            small_part = list(small_part)
+            length = (_max - burst + k - 1) // k
+            lef = burst + length
+            while lef < _max:
+                small_part.append(lef)
+                lef += length
+            small_part.append(_max)
+            posList = small_part # 前burst个点都是整数分割，后面分为1000份
+            interval_cdf = []
+            def calculate(pos, dis, params):
+                return dis.cdf(pos, *params)
+            pre_cdf = calculate(0, distribution, params)
+            interval_cdf.append((0, 0, pre_cdf))
+            for i in range(1, len(posList)):
+                cur_cdf = calculate(posList[i], distribution, params)
+                interval_cdf.append((posList[i - 1] + 1, posList[i], cur_cdf - pre_cdf))
+                pre_cdf = cur_cdf
+        else:
+            _min = interval.min()
+            _max = interval.max()
+            length = (_max - _min) // k
+            interval_cdf = []
+            lef = _min
+            pre_cdf = 0
+            def calculate(pos, dis, params):
+                return dis.cdf(pos, *params)
+            for i in range(k - 1):
+                cur_cdf = calculate(lef + length, distribution, params)
+                interval_cdf.append((int(lef), int(lef + length), cur_cdf - pre_cdf))
+                pre_cdf = cur_cdf
+                lef += length
+            interval_cdf.append((lef, _max, calculate(_max, distribution, params) - pre_cdf))
     with open('./intervalPos.txt', 'a') as file:
         file.write(intervalName + '\n')
         for interval in interval_cdf:
@@ -200,6 +224,8 @@ def simulateFile(file):
 if __name__ == '__main__':
     # file_path = './output/pktInterArrivalTime.out'
     targets = ['packetSize', 'pktInterArrivalTime', 'flowInterArrivalTime', 'burstDuration', 'burstPacketNum', 'burstByteCount', 'flowBytes', 'flowPktNum', 'flowDuration']
+    # targets = ['burstDuration']
+    # targets = ['pktInterArrivalTime']
     # flow特征需要单独读取
     
     with open('./intervalPos.txt', 'wb') as file:
