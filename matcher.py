@@ -137,12 +137,12 @@ def cal_cdf(interval, name, params, intervalName, k=100):
         length = (_max - _min + k - 1) // k
         interval_cdf = []
         lef = _min
+        pre_cdf = calculate(lef, params)
         posList = []
         while lef < _max:
             posList.append(lef)
             lef += length
         posList.append(_max)
-        pre_cdf = calculate(lef, params)
         for i in range(1, len(posList)):
             cur_cdf = calculate(posList[i], params)
             interval_cdf.append((int(posList[i - 1] + 1), int(posList[i]), cur_cdf - pre_cdf))
@@ -172,19 +172,19 @@ def cal_cdf(interval, name, params, intervalName, k=100):
                 interval_cdf.append((int(posList[i - 1] + 1), int(posList[i]), cur_cdf - pre_cdf))
                 pre_cdf = cur_cdf
         else:
+            def calculate(pos, dis, params):
+                return dis.cdf(pos, *params)
             _min = interval.min()
             _max = interval.max()
             length = (_max - _min + k - 1) // k
             interval_cdf = []
             lef = _min
             posList = []
+            pre_cdf = calculate(lef, distribution, params)
             while lef < _max:
                 posList.append(lef)
                 lef += length
-            posList.append(_max)
-            def calculate(pos, dis, params):
-                return dis.cdf(pos, *params)
-            pre_cdf = calculate(lef, distribution, params)
+            posList.append(_max) 
             for i in range(1, len(posList)):
                 cur_cdf = calculate(posList[i], distribution, params)
                 interval_cdf.append((int(posList[i - 1] + 1), int(posList[i]), cur_cdf - pre_cdf))
