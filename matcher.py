@@ -211,9 +211,9 @@ def simulateFile(file):
         entropy = calculate_cross_entropy(intervals, dist, params)
         entropies[name] = entropy
     cel, gmm = cal_GMM_entropy(intervals)
-    
-    entropies['GMM'] = cel
-    fitted_distributions['GMM'] = gmm
+    if cel >= 0:
+        entropies['GMM'] = cel
+        fitted_distributions['GMM'] = gmm
     print(entropies)
     best_fit = min(entropies, key=entropies.get)
     print(f"The best fitting distribution of {file} is {best_fit} with a cross entropy of {entropies[best_fit]:.2f}")
