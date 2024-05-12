@@ -137,13 +137,16 @@ def cal_cdf(interval, name, params, intervalName, k=100):
         length = (_max - _min + k - 1) // k
         interval_cdf = []
         lef = _min
-        pre_cdf = 0
-        for i in range(k - 1):
-            cur_cdf = calculate(lef + length, params)
-            interval_cdf.append((lef, lef + length, cur_cdf - pre_cdf))
-            pre_cdf = cur_cdf
+        posList = []
+        while lef < _max:
+            posList.append(lef)
             lef += length
-        interval_cdf.append((lef, _max, calculate(_max, params) - pre_cdf))
+        posList.append(_max)
+        pre_cdf = calculate(lef, params)
+        for i in range(1, len(posList)):
+            cur_cdf = calculate(posList[i], params)
+            interval_cdf.append((int(posList[i - 1] + 1), int(posList[i]), cur_cdf - pre_cdf))
+            pre_cdf = cur_cdf
     else:
         distribution = distributions[name]
         if intervalName == 'pktInterArrivalTime':
@@ -166,23 +169,26 @@ def cal_cdf(interval, name, params, intervalName, k=100):
             interval_cdf.append((0, 0, pre_cdf))
             for i in range(1, len(posList)):
                 cur_cdf = calculate(posList[i], distribution, params)
-                interval_cdf.append((posList[i - 1] + 1, posList[i], cur_cdf - pre_cdf))
+                interval_cdf.append((int(posList[i - 1] + 1), int(posList[i]), cur_cdf - pre_cdf))
                 pre_cdf = cur_cdf
         else:
             _min = interval.min()
             _max = interval.max()
-            length = (_max - _min) // k
+            length = (_max - _min + k - 1) // k
             interval_cdf = []
             lef = _min
-            pre_cdf = 0
+            posList = []
+            while lef < _max:
+                posList.append(lef)
+                lef += length
+            posList.append(_max)
             def calculate(pos, dis, params):
                 return dis.cdf(pos, *params)
-            for i in range(k - 1):
-                cur_cdf = calculate(lef + length, distribution, params)
-                interval_cdf.append((int(lef), int(lef + length), cur_cdf - pre_cdf))
+            pre_cdf = calculate(lef, distribution, params)
+            for i in range(1, len(posList)):
+                cur_cdf = calculate(posList[i], distribution, params)
+                interval_cdf.append((int(posList[i - 1] + 1), int(posList[i]), cur_cdf - pre_cdf))
                 pre_cdf = cur_cdf
-                lef += length
-            interval_cdf.append((lef, _max, calculate(_max, distribution, params) - pre_cdf))
     with open('./intervalPos.txt', 'a') as file:
         file.write(intervalName + '\n')
         for interval in interval_cdf:
