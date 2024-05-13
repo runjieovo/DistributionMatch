@@ -1,0 +1,8 @@
+name		pktNum		size
+total		39280		35387992
+ipv4		39280		35387992
+ipv6		0		0
+ipv4-tcp	0		0
+ipv4-udp	39270		35385492
+ipv6-tcp	0		0
+ipv6-udp	0		0

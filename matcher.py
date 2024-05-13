@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.mixture import GaussianMixture
 from scipy.stats import norm
+from collections import Counter
 
 
 # 分布名称映射到scipy.stats中的分布对象
@@ -71,11 +72,17 @@ def fit_distributions(intervals):
 
 def calculate_cross_entropy(intervals, distribution, params):
     try:
+        element_counts = Counter(intervals)
+        # 提取元素和它们出现的次数到两个新数组
+        elements = list(element_counts.keys())
+        counts = list(element_counts.values())
         if distribution in [stats.bernoulli, stats.binom]:
-            pmf = distribution.pmf(intervals, *params)
+            pmf = distribution.pmf(elements, *params)
+            pmf = [weight * count for weight, count in zip(pmf, counts)]
         else:
-            pdf = distribution.pdf(intervals, *params)
-            
+            pdf = distribution.pdf(elements, *params)
+            pdf = [weight * count for weight, count in zip(pdf, counts)]
+        
         values = np.clip(pmf if distribution in [stats.bernoulli, stats.binom] else pdf, 1e-10, 1)
         return -np.sum(np.log(values))
     except Exception as e:
@@ -120,10 +127,24 @@ def plot_best_fit_distribution(intervals, best_fit_name, best_fit_params, file):
     
 def cal_GMM_entropy(intervals):
     intervals = np.array(intervals).reshape(-1, 1)
-    gmm = GaussianMixture(n_components=3, random_state=0)
+    ii = [int(i) for i in intervals if i < 1400]
+    gap = len(intervals) - len(ii)
+    gap = int(gap * 0.9)
+    for i in range(gap):
+        ii.append(1400)
+    gmm = GaussianMixture(n_components=3, random_state=2)
+    # , means_init=[[10], [1400], [300]]
+    # intervals = ii
+    # intervals = np.array(intervals).reshape(-1, 1)
     gmm.fit(intervals)
-    log_pdf = gmm.score_samples(intervals)
-    # log_pdf = np.
+    
+    element_counts = Counter(list(intervals.reshape(-1)))
+    # 提取元素和它们出现的次数到两个新数组
+    elements = list(element_counts.keys())
+    counts = list(element_counts.values())
+    log_pdf = gmm.score_samples(np.array(elements).reshape(-1, 1))
+    log_pdf = [weight * count for weight, count in zip(log_pdf, counts)]
+    # log_pdf = np.s
     cel = -np.sum(log_pdf)
     return cel, gmm
 
@@ -197,7 +218,7 @@ def cal_cdf(interval, name, params, intervalName, k=100):
         
     
 def simulateFile(file):
-    filePth = './output/{}.out'.format(file)
+    filePth = './bilibili_output/{}.out'.format(file)
     if file in ['flowBytes', 'flowPktNum', 'flowDuration']:
         flowPktNum, flowBytes, flowDuration = read_flow('./output/fiveTupleInfo.out')
         intervals = locals().get(file)
@@ -229,9 +250,9 @@ def simulateFile(file):
     
 if __name__ == '__main__':
     # file_path = './output/pktInterArrivalTime.out'
-    targets = ['packetSize', 'pktInterArrivalTime', 'flowInterArrivalTime', 'burstDuration', 'burstPacketNum', 'burstByteCount', 'flowBytes', 'flowPktNum', 'flowDuration']
+    # targets = ['packetSize', 'pktInterArrivalTime', 'flowInterArrivalTime', 'burstDuration', 'burstPacketNum', 'burstByteCount', 'flowBytes', 'flowPktNum', 'flowDuration']
     # targets = ['burstDuration']
-    # targets = ['pktInterArrivalTime']
+    targets = ['packetSize']
     # flow特征需要单独读取
     
     with open('./intervalPos.txt', 'wb') as file:
